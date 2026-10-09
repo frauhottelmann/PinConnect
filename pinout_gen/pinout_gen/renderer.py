@@ -496,31 +496,24 @@ def _xt30_cavities(geo: ConnectorGeometry, n_per_row: int) -> str:
     return '\n'.join(parts)
 
 
-# ── StepStick: two 8-way headers and a two-pin tower ─────────────────
+# ── StepStick: two 8-way sockets and a two-pin tower ──────────────────
 #
-# Modelled on the connector's front cross-section.  Each way is a cell with a
-# V notch cut into both long edges between neighbours, and chamfered outer
-# corners.  The two-pin tower stands on the end cell of the lower header, at one
-# end only, so it is the one feature that tells you which way round the
-# connector goes.  Lengths are millimetres of the real part and are scaled by
-# ``pin_pitch / 2.54``, so the shape follows the pitch like every other style.
+# The female side of a StepStick driver, seen from its mating face.  Each way
+# is a cell with a V notch cut into both long edges between neighbours and
+# chamfered outer corners, holding a square socket with a funnelled entry.  The
+# two-pin tower stands on the end cell of the lower header, at one end only, so
+# it is the one feature that tells you which way round the connector goes; which
+# end it is follows the pin column, ``row3_padding_left``.  Lengths are
+# millimetres of the real part and are scaled by ``pin_pitch / 2.54``, so the
+# shape follows the pitch like every other style.
 
 _STEPSTICK_NOTCH_DEPTH = 0.50    # how far a V notch cuts into the housing
 _STEPSTICK_NOTCH_MOUTH = 0.47    # its half-width at the housing edge
 _STEPSTICK_NOTCH_FLOOR = 0.10    # ... and at its floor
 _STEPSTICK_CHAMFER_SHORT = 0.37  # outer corner chamfer, along the cell's long edge
 _STEPSTICK_CHAMFER_LONG = 0.50   # ... and across it
-_STEPSTICK_PIN = 0.64            # square pin
-
-
-def _stepstick_tower(geo: ConnectorGeometry, n_per_row: int) -> tuple[float, float, float, float]:
-    """x of the tower's pin column, its left and right edges, and the pin pitch.
-
-    The tower is as wide as the end cell it stands on, so its right edge is the
-    body's right edge.
-    """
-    W, tx = geo.connector_width(n_per_row), geo.row3_x(n_per_row)
-    return tx, 2 * tx - W, W, geo.row3_pin_pitch_y
+_STEPSTICK_SOCKET = 1.40         # square socket at the funnel's mouth
+_STEPSTICK_SOCKET_BORE = 0.64    # ... and its bore, as a fraction of the mouth
 
 
 def _stepstick_outline(geo: ConnectorGeometry, n_per_row: int) -> list[list[tuple[float, float]]]:
@@ -529,7 +522,13 @@ def _stepstick_outline(geo: ConnectorGeometry, n_per_row: int) -> list[list[tupl
     s = geo.pin_pitch / 2.54
     nd, nm, nf = (k * s for k in (_STEPSTICK_NOTCH_DEPTH, _STEPSTICK_NOTCH_MOUTH, _STEPSTICK_NOTCH_FLOOR))
     c_short, c_long = _STEPSTICK_CHAMFER_SHORT * s, _STEPSTICK_CHAMFER_LONG * s
-    pxs = geo.pin_centers_x(n_per_row)
+
+    # Drawn with the tower on the right; a tower on the left is the same shape
+    # mirrored, so work in a frame where it is on the right and map back.
+    mirror = geo.row3_x(n_per_row) < W / 2
+    flip = (lambda x: W - x) if mirror else (lambda x: x)
+    pxs = sorted(flip(x) for x in geo.pin_centers_x(n_per_row))
+    tx = flip(geo.row3_x(n_per_row))
     bounds = [(a + b) / 2 for a, b in zip(pxs, pxs[1:])]
 
     def notches(y: float, dy: float, rightwards: bool) -> list[tuple[float, float]]:
@@ -544,8 +543,10 @@ def _stepstick_outline(geo: ConnectorGeometry, n_per_row: int) -> list[list[tupl
         yt, yb = cy - half, cy + half
         pts = [(0.0, yt + c_long), (c_short, yt)] + notches(yt, nd, True)
         if tower:
-            tx, xl, xr, pitch = _stepstick_tower(geo, n_per_row)
-            xl = min(xl, xr - 4 * c_long)
+            # The tower is as wide as the end cell it stands on, so its far
+            # edge is the body's edge.
+            xl, xr = min(2 * tx - W, W - 4 * c_long), W
+            pitch = geo.row3_pin_pitch_y
             ya = geo.row3_pin_cy
             ym, y_top = ya + pitch / 2, ya - pitch / 2
             vx = max(xl + c_short, bounds[-1] + nm) if bounds else xl + c_short
@@ -562,7 +563,7 @@ def _stepstick_outline(geo: ConnectorGeometry, n_per_row: int) -> list[list[tupl
         pts += [(W, yt + c_long), (W, yb - c_long), (W - c_short, yb)]
         pts += notches(yb, -nd, False)
         pts += [(c_short, yb), (0.0, yb - c_long)]
-        return pts
+        return [(flip(x), y) for x, y in pts]
 
     upper_cy, lower_cy = sorted((geo.pin_cy, geo.row2_pin_cy))
     return [header(upper_cy, upper_cy, False), header(lower_cy, H - lower_cy, True)]
@@ -572,24 +573,27 @@ def _body_path_stepstick(geo: ConnectorGeometry, n_per_row: int) -> str:
     return " ".join(_poly_d(pts) for pts in _stepstick_outline(geo, n_per_row))
 
 
-def _stepstick_pins(geo: ConnectorGeometry, n_per_row: int) -> str:
-    """Every square pin, tip-on: the pin, its flat tip, and the chamfer between."""
-    s = geo.pin_pitch / 2.54
-    q = geo.cavity_size if geo.cavity_size > 0 else _STEPSTICK_PIN * s
-    h, t = q / 2, q / 4
-    tx, _, _, pitch = _stepstick_tower(geo, n_per_row)
+def _stepstick_sockets(geo: ConnectorGeometry, n_per_row: int) -> str:
+    """Every square socket: the funnel's mouth, the bore, and the funnel walls."""
+    q = geo.cavity_size if geo.cavity_size > 0 else _STEPSTICK_SOCKET * geo.pin_pitch / 2.54
+    h = q / 2
+    t = h * _STEPSTICK_SOCKET_BORE
+    tx = geo.row3_x(n_per_row)
     centres = [(x, y) for y in (geo.pin_cy, geo.row2_pin_cy) for x in geo.pin_centers_x(n_per_row)]
-    centres += [(tx, geo.row3_pin_cy + k * pitch) for k in range(2)]
+    centres += [(tx, geo.row3_pin_cy + k * geo.row3_pin_pitch_y) for k in range(2)]
     stk = 'stroke="var(--conn-stroke,#555)"'
     parts = []
     for cx, cy in centres:
         parts.append(
             f'<rect x="{cx - h:.1f}" y="{cy - h:.1f}" width="{q:.1f}" height="{q:.1f}" '
-            f'fill="var(--conn-cavity,#d0d0c8)" {stk} stroke-width="0.45"/>'
+            f'fill="var(--conn-cavity,#d0d0c8)" {stk} stroke-width="0.5"/>'
         )
         parts.append(
-            f'<path d="M {cx - t:.1f},{cy - t:.1f} h {2 * t:.1f} v {2 * t:.1f} h {-2 * t:.1f} Z '
-            f'M {cx - h:.1f},{cy - h:.1f} L {cx - t:.1f},{cy - t:.1f} '
+            f'<path d="M {cx - t:.1f},{cy - t:.1f} h {2 * t:.1f} v {2 * t:.1f} h {-2 * t:.1f} Z" '
+            f'fill="var(--conn-stroke,#555)" fill-opacity="0.45" {stk} stroke-width="0.4"/>'
+        )
+        parts.append(
+            f'<path d="M {cx - h:.1f},{cy - h:.1f} L {cx - t:.1f},{cy - t:.1f} '
             f'M {cx + h:.1f},{cy - h:.1f} L {cx + t:.1f},{cy - t:.1f} '
             f'M {cx + h:.1f},{cy + h:.1f} L {cx + t:.1f},{cy + t:.1f} '
             f'M {cx - h:.1f},{cy + h:.1f} L {cx - t:.1f},{cy + t:.1f}" '
@@ -792,7 +796,7 @@ def render_connector_svg(connector: Connector, conn_type: ConnectorType) -> str:
     elif style == "sherlock":
         parts.append(_sherlock_cavity(geo, n_per_row))
     elif style == "stepstick":
-        parts.append(_stepstick_pins(geo, n_per_row))
+        parts.append(_stepstick_sockets(geo, n_per_row))
     elif style == "grid" and geo.cavity_size > 0:
         half = geo.cavity_size / 2
         row_cys = [geo.pin_cy]

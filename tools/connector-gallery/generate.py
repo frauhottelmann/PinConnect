@@ -37,7 +37,7 @@ GALLERY_ORDER = ["XH-F", "PH-F", "MX-F-1R", "MX-F-2R", "SHERLOCK-F",
                  "HDR-127", "HDR-127-2R", "HDR-200", "HDR-200-2R",
                  "HDR-254", "HDR-254-2R",
                  "ST-254", "ST-508", "ST-BR-508", "ST-BR-950",
-                 "XT30-2+2", "STEPSTICK", "slide-switch", "button", "USB-C"]
+                 "XT30-2+2", "STEPSTICK-F", "slide-switch", "button", "USB-C"]
 PALETTE = ["#E74C3C", "#F39C12", "#2ECC71", "#3498DB", "#9B59B6", "#1ABC9C"]
 # Location markers read best with no pins (the docs say to leave pins off these).
 NO_PINS = {"USB-C", "button"}
