@@ -1,6 +1,7 @@
 [connector]
 name = "StepStick"
 style = "stepstick"
+default_pins = [8, 8, 2]
 
 # Two 8-way 2.54 mm headers with a two-pin tower standing on the end of the
 # lower one. Row 1 is the lower header, row 2 the upper one, row 3 the tower.

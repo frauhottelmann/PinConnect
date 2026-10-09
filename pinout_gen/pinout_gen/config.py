@@ -85,6 +85,9 @@ class ConnectorType:
     name: str
     style: str
     geometry: ConnectorGeometry
+    # Pins per row a new connector of this type starts with (the designer's
+    # "New Connector"); empty means a single pin.
+    default_pins: list[int] = field(default_factory=list)
 
 
 # ── Board config ─────────────────────────────────────────────────────
@@ -271,10 +274,19 @@ def load_connector_type(path: Path) -> ConnectorType:
                 f"{sorted(_PINOUT_SIDES)} (got {geo_kwargs[side_key]!r})"
             )
 
+    default_pins = info.get("default_pins", [])
+    if (not isinstance(default_pins, list) or len(default_pins) > geo_kwargs.get("rows", 1)
+            or any(isinstance(n, bool) or not isinstance(n, int) or n < 0 for n in default_pins)):
+        raise ValueError(
+            f"{path.name}: [connector] default_pins must be a list of pin counts, "
+            f"one per row (up to rows), got {default_pins!r}"
+        )
+
     return ConnectorType(
         name=_require(info, "name", f"{path.name} [connector]"),
         style=style,
         geometry=ConnectorGeometry(**geo_kwargs),
+        default_pins=list(default_pins),
     )
 
 
