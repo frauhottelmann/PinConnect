@@ -1,0 +1,25 @@
+[connector]
+name = "StepStick"
+style = "stepstick"
+
+# Two 8-way 2.54 mm headers with a two-pin tower standing on the end of the
+# lower one. Row 1 is the lower header, row 2 the upper one, row 3 the tower.
+[geometry]
+pin_pitch = 10.0
+padding_left = 4.8
+padding_right = 4.8
+height = 60.8
+wall = 1.5
+pin_cy = 55.9
+pin_radius = 1.2
+pinout_side = "bottom"
+line_length = 12.0
+rows = 3
+row2_pin_cy = 4.9
+row2_pinout_side = "top"
+row2_line_length = 12.0
+row3_pin_cy = 36.3
+row3_pin_pitch_y = 10.1
+row3_pinout_side = "right"
+row3_line_length = 12.0
+cavity_size = 2.5

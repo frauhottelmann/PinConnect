@@ -36,6 +36,16 @@ class ConnectorGeometry:
     row2_padding_left: float = -1.0
     row2_pin_pitch_y: float = 0.0
     row2_pin_radius: float = -1.0
+    # Third row (``rows = 3``): always a vertical column of pins, like the
+    # vertical form of row 2.  ``row3_pin_cy`` is the *first* (top) pin's centre
+    # offset from the top edge; the rest follow every ``row3_pin_pitch_y``.
+    # A negative ``row3_padding_left`` puts the column on row 1's last pin.
+    row3_padding_left: float = -1.0
+    row3_pin_cy: float = 0.0
+    row3_pin_pitch_y: float = 10.0
+    row3_pin_radius: float = -1.0
+    row3_pinout_side: str = "right"
+    row3_line_length: float = 20.0
     cavity_size: float = 0.0
     mating_pin_scale: float = 1.0
     flare_max_pins: int = 0    # pin count at/below which the housing flares wider
@@ -62,6 +72,12 @@ class ConnectorGeometry:
     def pin_centers_x(self, n_pins: int) -> list[float]:
         left = self.padding_left + self.flare_for(n_pins)
         return [left + i * self.pin_pitch for i in range(n_pins)]
+
+    def row3_x(self, n_per_row: int) -> float:
+        """x of the third row's column of pins."""
+        if self.row3_padding_left >= 0:
+            return self.row3_padding_left
+        return self.pin_centers_x(n_per_row)[-1] if n_per_row > 0 else self.padding_left
 
 
 @dataclass
@@ -127,7 +143,7 @@ def _require(table: dict, key: str, ctx: str):
 _LABEL_STYLES = frozenset({"staggered", "staircase", "flat"})
 _BODY_STYLES = frozenset({
     "box", "latch", "grid", "header-male", "screw-terminal", "barrier", "button", "xt30",
-    "sherlock", "slide-switch",
+    "sherlock", "slide-switch", "stepstick",
     # "none" draws nothing at all: the connector is only a labeled hotspot on
     # the board, for marking things that have no pinout to show.
     "none",
@@ -248,7 +264,7 @@ def load_connector_type(path: Path) -> ConnectorType:
         raise ValueError(
             f"{path.name}: unknown connector style {style!r}; valid: {sorted(_BODY_STYLES)}"
         )
-    for side_key in ("pinout_side", "row2_pinout_side"):
+    for side_key in ("pinout_side", "row2_pinout_side", "row3_pinout_side"):
         if side_key in geo_kwargs and geo_kwargs[side_key] not in _PINOUT_SIDES:
             raise ValueError(
                 f"{path.name}: [geometry] {side_key} must be one of "

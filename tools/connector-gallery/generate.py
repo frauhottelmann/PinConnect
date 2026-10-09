@@ -37,7 +37,7 @@ GALLERY_ORDER = ["XH-F", "PH-F", "MX-F-1R", "MX-F-2R", "SHERLOCK-F",
                  "HDR-127", "HDR-127-2R", "HDR-200", "HDR-200-2R",
                  "HDR-254", "HDR-254-2R",
                  "ST-254", "ST-508", "ST-BR-508", "ST-BR-950",
-                 "XT30-2+2", "slide-switch", "button", "USB-C"]
+                 "XT30-2+2", "STEPSTICK", "slide-switch", "button", "USB-C"]
 PALETTE = ["#E74C3C", "#F39C12", "#2ECC71", "#3498DB", "#9B59B6", "#1ABC9C"]
 # Location markers read best with no pins (the docs say to leave pins off these).
 NO_PINS = {"USB-C", "button"}
@@ -67,7 +67,9 @@ def _page(cards_html, cols):
 
 def _pins_for(geo):
     """A small, representative pin set colored from the palette."""
-    if geo.row2_pin_pitch_y > 0:      # XT30-2+2: 2 power + 2 vertical signal
+    if geo.rows >= 3:                 # StepStick: 8 + 8 headers, 2-pin tower
+        spec = [(1, 8), (2, 8), (3, 2)]
+    elif geo.row2_pin_pitch_y > 0:    # XT30-2+2: 2 power + 2 vertical signal
         spec = [(1, 2), (2, 2)]
     elif geo.rows >= 2:               # two-row grid: 3 over 3
         spec = [(1, 3), (2, 3)]
