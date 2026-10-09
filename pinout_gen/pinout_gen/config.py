@@ -85,9 +85,9 @@ class ConnectorType:
     name: str
     style: str
     geometry: ConnectorGeometry
-    # Pins per row a new connector of this type starts with (the designer's
-    # "New Connector"); empty means a single pin.
-    default_pins: list[int] = field(default_factory=list)
+    # Pins a new connector of this type starts with (the designer's "New
+    # Connector"); empty means a single unnamed pin.
+    default_pins: list[Pin] = field(default_factory=list)
 
 
 # ── Board config ─────────────────────────────────────────────────────
@@ -232,6 +232,22 @@ def load_board(path: Path) -> Board:
     return board
 
 
+def _load_default_pins(raw: object, fname: str, rows: int) -> list[Pin]:
+    """Parse `default_pins`: a list of {name, color?, row?} tables, as in a board."""
+    ctx = f"{fname}: [connector] default_pins"
+    if not isinstance(raw, list):
+        raise ValueError(f"{ctx} must be a list of pin tables like {{ name = \"GND\", row = 1 }}")
+    pins = []
+    for i, p in enumerate(raw):
+        if not isinstance(p, dict) or not isinstance(p.get("name"), str):
+            raise ValueError(f"{ctx} #{i + 1} must be a table with a 'name'")
+        row = p.get("row", 1)
+        if isinstance(row, bool) or not isinstance(row, int) or not 1 <= row <= max(rows, 1):
+            raise ValueError(f"{ctx} #{i + 1}: row must be 1 to {max(rows, 1)} (got {row!r})")
+        pins.append(Pin(name=p["name"], color=p.get("color", "#888888"), row=row))
+    return pins
+
+
 def load_connector_type(path: Path) -> ConnectorType:
     try:
         with open(path, "rb") as f:
@@ -274,19 +290,14 @@ def load_connector_type(path: Path) -> ConnectorType:
                 f"{sorted(_PINOUT_SIDES)} (got {geo_kwargs[side_key]!r})"
             )
 
-    default_pins = info.get("default_pins", [])
-    if (not isinstance(default_pins, list) or len(default_pins) > geo_kwargs.get("rows", 1)
-            or any(isinstance(n, bool) or not isinstance(n, int) or n < 0 for n in default_pins)):
-        raise ValueError(
-            f"{path.name}: [connector] default_pins must be a list of pin counts, "
-            f"one per row (up to rows), got {default_pins!r}"
-        )
+    default_pins = _load_default_pins(info.get("default_pins", []), path.name,
+                                      geo_kwargs.get("rows", 1))
 
     return ConnectorType(
         name=_require(info, "name", f"{path.name} [connector]"),
         style=style,
         geometry=ConnectorGeometry(**geo_kwargs),
-        default_pins=list(default_pins),
+        default_pins=default_pins,
     )
 
 

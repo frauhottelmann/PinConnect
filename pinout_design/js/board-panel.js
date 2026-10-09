@@ -566,12 +566,11 @@ export class BoardPanel {
     dialog.querySelector("#new-conn-id").select();
   }
 
-  /** A new connector's pins: the type's default layout, else a single pin. */
+  /** A new connector's pins: the type's own default pins, else a single one. */
   _startingPins(type) {
-    const perRow = this.state.connectorTypes.get(type)?.defaultPins ?? [];
-    const pins = perRow.flatMap((count, r) => Array.from({ length: count }, () => r + 1));
-    if (!pins.length) return [new Pin("PIN1", "#888888")];
-    return pins.map((row, i) => new Pin(`PIN${i + 1}`, "#888888", row));
+    const defaults = this.state.connectorTypes.get(type)?.defaultPins ?? [];
+    if (!defaults.length) return [new Pin("PIN1", "#888888")];
+    return defaults.map(p => new Pin(p.name, p.color, p.row));
   }
 
   // --- Rendering ---

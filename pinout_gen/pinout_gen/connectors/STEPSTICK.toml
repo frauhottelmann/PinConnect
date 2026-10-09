@@ -1,7 +1,29 @@
 [connector]
 name = "StepStick"
 style = "stepstick"
-default_pins = [8, 8, 2]
+# TMC2209 SilentStepStick pinout. Row 1 is the module's EN column and row 2 its
+# VM column, each listed from the end away from the tower to the end beside it,
+# so EN and VM end up next to the tower. Row 3 is the tower: INDEX, then DIAG.
+default_pins = [
+  { name = "DIR", color = "#FFBF00", row = 1 },
+  { name = "STEP", color = "#FFBF00", row = 1 },
+  { name = "PDN_UART", color = "#9B59B6", row = 1 },
+  { name = "PDN_UART", color = "#9B59B6", row = 1 },
+  { name = "SPREAD", color = "#FFBF00", row = 1 },
+  { name = "MS2", color = "#FFBF00", row = 1 },
+  { name = "MS1", color = "#FFBF00", row = 1 },
+  { name = "EN", color = "#FFBF00", row = 1 },
+  { name = "GND", color = "#2C3E50", row = 2 },
+  { name = "VIO", color = "#E74C3C", row = 2 },
+  { name = "M1B", color = "#3498DB", row = 2 },
+  { name = "M1A", color = "#3498DB", row = 2 },
+  { name = "M2A", color = "#2ECC71", row = 2 },
+  { name = "M2B", color = "#2ECC71", row = 2 },
+  { name = "GND", color = "#2C3E50", row = 2 },
+  { name = "VM", color = "#E74C3C", row = 2 },
+  { name = "INDEX", color = "#1ABC9C", row = 3 },
+  { name = "DIAG", color = "#1ABC9C", row = 3 },
+]
 
 # Two 8-way 2.54 mm headers with a two-pin tower standing on the end of the
 # lower one. Row 1 is the lower header, row 2 the upper one, row 3 the tower.
