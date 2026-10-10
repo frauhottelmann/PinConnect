@@ -28,24 +28,25 @@ default_pins = [
 ]
 
 [geometry]
-# Two 8-way 2.54 mm female headers with a two-pin tower standing on the end of the
-# lower one. Row 1 is the lower header, row 2 the upper one, row 3 the tower.
+# Two 8-way 2.54 mm female headers, 12.7 mm (0.5 in) apart, with a two-pin tower
+# on the end of the lower one. Row 1 is the lower header, row 2 the upper one,
+# row 3 the tower. Drawn on the 2.54 mm grid at 10 units per pitch.
 pin_pitch = 10.0
-padding_left = 4.8
-padding_right = 4.8
-height = 60.8
+padding_left = 5.0
+padding_right = 5.0
+height = 60.0
 wall = 1.5
-pin_cy = 55.9
+pin_cy = 55.0
 pin_radius = 1.2
 pinout_side = "bottom"
 line_length = 12.0
 rows = 3
-row2_pin_cy = 4.9
+row2_pin_cy = 5.0
 row2_pinout_side = "top"
 row2_line_length = 12.0
-row3_padding_left = 4.8
-row3_pin_cy = 36.3
-row3_pin_pitch_y = 10.1
+row3_padding_left = 5.0
+row3_pin_cy = 35.0
+row3_pin_pitch_y = 10.0
 row3_pinout_side = "left"
 row3_line_length = 12.0
 cavity_size = 5.5
