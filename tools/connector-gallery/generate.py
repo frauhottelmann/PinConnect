@@ -65,11 +65,17 @@ def _page(cards_html, cols):
 </style></head><body><div class="grid">{cards_html}</div></body></html>"""
 
 
-def _pins_for(geo):
-    """A small, representative pin set colored from the palette."""
-    if geo.rows >= 3:                 # StepStick: 8 + 8 headers, 2-pin tower
-        spec = [(1, 8), (2, 8), (3, 2)]
-    elif geo.row2_pin_pitch_y > 0:    # XT30-2+2: 2 power + 2 vertical signal
+def _pins_for(ct):
+    """A small, representative pin set colored from the palette.
+
+    A type that declares its own default pins is shown with exactly those, so
+    the card carries the real layout (a StepStick is 8 + 8 + 2, not 3 + 3).
+    """
+    geo = ct.geometry
+    if ct.default_pins:
+        return [Pin(name="", color=PALETTE[k % len(PALETTE)], row=p.row)
+                for k, p in enumerate(ct.default_pins)]
+    if geo.row2_pin_pitch_y > 0:      # XT30-2+2: 2 power + 2 vertical signal
         spec = [(1, 2), (2, 2)]
     elif geo.rows >= 2:               # two-row grid: 3 over 3
         spec = [(1, 3), (2, 3)]
@@ -93,7 +99,7 @@ def build_gallery():
     cards = []
     for name in GALLERY_ORDER:
         ct = load_connector_type(CONN_DIR / f"{name}.toml")
-        pins = [] if name in NO_PINS else _pins_for(ct.geometry)
+        pins = [] if name in NO_PINS else _pins_for(ct)
         cards.append(
             f'<figure class="card"><div class="art">{_svg(name, ct, pins)}</div>'
             f'<figcaption><span class="nm">{html.escape(name)}</span>'
